@@ -1,0 +1,51 @@
+# ANCHOR
+
+**ANCHOR** is a public registry for the security state of blockchain addresses.
+
+ANCHOR does not move funds.  
+ANCHOR does not rate or judge addresses.  
+ANCHOR only records cryptographically verifiable declarations and their history.
+
+---
+
+## What problem does ANCHOR solve?
+
+Blockchains show balances and transactions,  
+but they do **not** show how an address is managed.
+
+Today, you cannot publicly verify:
+- which cryptographic algorithm an address claims to use
+- whether keys have been rotated
+- whether an address has been revoked
+- whether the owner is actively maintaining the key
+
+ANCHOR makes this information **public, verifiable, and auditable**.
+
+---
+
+## What ANCHOR is (and is not)
+
+### ANCHOR **is**
+- a public address security state registry
+- non-custodial (keys never leave wallets)
+- chain-neutral (BTC, ETH, SOL, etc.)
+- minimal by design
+
+### ANCHOR **is not**
+- a payment network
+- a wallet
+- a rating or certification system
+- a security guarantee
+
+---
+
+## Core principle
+
+> **Do not trust ANCHOR.  
+Verify what address owners declare.**
+
+---
+
+## Status
+
+ANCHOR is an early-stage open specification and reference implementation.
