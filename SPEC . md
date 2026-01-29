@@ -1,0 +1,186 @@
+# ANCHOR Specification (v0.1)
+
+Version: v0.1  
+Date: 2026-01-29  
+Status: Draft  
+Project: ANCHOR — Public registry for address security state
+
+---
+
+## 1. Overview
+
+ANCHOR is a public registry that records the security state of blockchain address ownership as
+cryptographically verifiable declarations and their history.
+
+ANCHOR:
+- does not move funds
+- does not rate or judge addresses
+- does not guarantee security
+- is chain-neutral (BTC, ETH, SOL, etc.)
+
+ANCHOR focuses on recording:
+- registration (start of identity)
+- key rotation history (management activity)
+- revocation (end of identity)
+
+---
+
+## 2. Terminology
+
+- **Identity**: A persistent subject in ANCHOR. Represented by an ANCHOR address and `aqid`.
+- **ANCHOR Address**: Human-readable bech32m-encoded identifier representing an Identity.
+- **AQID**: 32-byte identity identifier used as the primary key for events and resolution.
+- **Event**: A record that mutates or finalizes an Identity’s state (REG/ROT/REV).
+- **Resolver**: A component that derives the current state by applying event rules deterministically.
+
+---
+
+## 3. Design Principles
+
+1. Private keys never leave the wallet.
+2. ANCHOR does not rate, judge, or guarantee security.
+3. Only declarations and their history are recorded.
+4. Minimal surface area over feature completeness.
+5. Chain neutrality is mandatory.
+
+---
+
+## 4. ANCHOR Address Format
+
+ANCHOR addresses MUST be encoded using **bech32m**.
+
+### 4.1 Human-Readable Part (HRP)
+
+- HRP MUST be: `anchor`
+
+Thus, all ANCHOR addresses MUST start with:
+
+`anchor1...`
+
+### 4.2 Payload
+
+The decoded payload MUST be exactly 33 bytes:
+
+- `version` (1 byte)
+- `aqid` (32 bytes)
+
+Concatenation:
+
+`payload = version(1) || aqid(32)`
+
+### 4.3 Version
+
+- v0.1 defines a single version: `0x01`
+- Future versions MAY introduce new payload formats.
+
+---
+
+## 5. AQID
+
+### 5.1 Definition
+
+`aqid` is a 32-byte identifier representing an ANCHOR Identity.
+
+In v0.1, `aqid` is derived as:
+
+`aqid = BLAKE3(seed)` (32 bytes)
+
+- `seed` MUST be generated locally using a cryptographically secure RNG.
+- `seed` MUST NOT be published or transmitted.
+- `aqid` MAY be published and used freely as an identity identifier.
+
+Note: v0.1 defines AQID derivation and usage. Event-level cryptographic attestation
+and verification MAY be implemented by clients, but is not required as a strict consensus rule
+in this draft (see Non-Goals).
+
+---
+
+## 6. Events
+
+ANCHOR defines exactly three event types:
+
+- `REG` — Register an Identity (start)
+- `ROT` — Rotate / update management state (continuation)
+- `REV` — Revoke an Identity (end)
+
+Events are append-only records. Resolvers compute current state by applying events
+according to deterministic rules.
+
+### 6.1 Event Fields (v0.1 minimal)
+
+Each event MUST include:
+
+- `type`: one of `REG`, `ROT`, `REV`
+- `aqid`: 32-byte identity id
+- `timestamp`: ISO-8601 UTC timestamp (e.g., `2026-01-10T08:41:00Z`)
+- `seq`: non-negative integer sequence number, strictly increasing per `aqid`
+
+Events MAY include optional metadata fields (implementation-specific) but resolvers MUST NOT
+treat optional fields as required for state resolution in v0.1.
+
+---
+
+## 7. State Model
+
+### 7.1 States
+
+- `UNREGISTERED`
+- `ACTIVE`
+- `REVOKED`
+
+Initial state for any `aqid` is `UNREGISTERED`.
+
+### 7.2 Valid Transitions
+
+- `REG`: `UNREGISTERED → ACTIVE`
+- `ROT`: `ACTIVE → ACTIVE` (updates rotation time and increments rotation_count)
+- `REV`: `ACTIVE → REVOKED`
+- Any event applied to `REVOKED` MUST be ignored by resolvers.
+
+---
+
+## 8. Ordering and Resolution Rules
+
+Resolvers MUST compute state deterministically as follows:
+
+1. Collect all events for the target `aqid`.
+2. Sort events by:
+   - ascending `timestamp`, then
+   - ascending `seq`
+3. Initialize:
+   - `state = UNREGISTERED`
+   - `registered_at = null`
+   - `last_rotation_at = null`
+   - `revoked_at = null`
+   - `rotation_count = 0`
+4. Apply events in order:
+   - If `state == REVOKED`, ignore all subsequent events.
+   - If event is `REG` and `state == UNREGISTERED`:
+     - `state = ACTIVE`
+     - `registered_at = event.timestamp`
+   - If event is `ROT` and `state == ACTIVE`:
+     - `last_rotation_at = event.timestamp`
+     - `rotation_count += 1`
+   - If event is `REV` and `state == ACTIVE`:
+     - `state = REVOKED`
+     - `revoked_at = event.timestamp`
+   - Otherwise, ignore the event.
+
+This procedure MUST yield the same result for any resolver given identical event sets.
+
+---
+
+## 9. Resolver Output Schema (v0.1)
+
+Resolvers SHOULD return JSON with the following fields:
+
+```json
+{
+  "aqid": "0x...",
+  "address": "anchor1...",
+  "state": "ACTIVE",
+  "registered_at": "2026-01-02T10:12:00Z",
+  "last_rotation_at": "2026-03-15T08:41:00Z",
+  "revoked_at": null,
+  "rotation_count": 2
+}
