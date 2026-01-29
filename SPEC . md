@@ -184,3 +184,27 @@ Resolvers SHOULD return JSON with the following fields:
   "revoked_at": null,
   "rotation_count": 2
 }
+
+Resolvers MUST NOT output security scores, recommendations, or subjective ratings.
+
+⸻
+
+## 10. Security Notes
+	-	ANCHOR does not custody keys, seeds, or funds.
+	-	ROT does not guarantee security; it is a time signal of management activity.
+	-	REV is not a network-level block; it is a public declaration of invalidity.
+	-	Interpretation and policy decisions are outside ANCHOR.
+
+⸻
+
+## 11. Non-Goals (v0.1)
+
+ANCHOR is NOT:
+	-	a payment network or blockchain consensus system
+	-	a wallet or custody solution
+	-	a rating, certification, or recommendation system
+	-	a security guarantee or insurance mechanism
+	-	a replacement for BTC, ETH, or SOL
+
+v0.1 does not mandate a specific blockchain, token, or global consensus mechanism.
+ANCHOR defines data formats and deterministic resolution rules only.
