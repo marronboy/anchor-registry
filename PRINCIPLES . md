@@ -1,0 +1,7 @@
+# ANCHOR Principles
+
+1. Private keys never leave the wallet.
+2. ANCHOR does not rate, judge, or guarantee security.
+3. Only declarations and their history are recorded.
+4. Minimal surface area over feature completeness.
+5. Chain neutrality is mandatory.
